@@ -75,7 +75,11 @@ python run.py --dashboard
 
 This will start the Streamlit dashboard for interactive analysis.
 
-If the page encounter any issues with the dataset, run `python setup.py` at first and call `run.py` for next times.
+If the page encounter any issues with the dataset, run 
+```
+python setup.py
+```
+at first and call `run.py` for next times.
 
 ### 3. Explore the Notebooks
 
@@ -122,8 +126,3 @@ Based on ROI analysis, the most effective retention strategies are:
 
 ## License
 Dataset's copyright from IBM's kaggle: https://www.kaggle.com/datasets/blastchar/telco-customer-churn/data
-
-## Contributors
-
-Do Viet Anh
-Sharizan Ramli
