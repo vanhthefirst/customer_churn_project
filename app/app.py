@@ -21,6 +21,7 @@ from pages.overview import show_overview
 from pages.customer_prediction import show_customer_prediction
 from pages.segment_analysis import show_segment_analysis
 from pages.retention_strategies import show_retention_strategies
+from pages.ab_testing import show_ab_testing
 
 # Set page config
 st.set_page_config(
@@ -112,7 +113,7 @@ def main():
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Select a page",
-        ["Overview", "Customer Prediction", "Segment Analysis", "Retention Strategies"]
+        ["Overview", "Customer Prediction", "Segment Analysis", "Retention Strategies", "A/B Testing"]
     )
     
     # Load data (cached for performance)
@@ -159,6 +160,8 @@ def main():
         show_segment_analysis(df)
     elif page == "Retention Strategies":
         show_retention_strategies(df)
+    elif page == "A/B Testing":
+        show_ab_testing(df, model, X_train_columns)
 
 if __name__ == "__main__":
     main()
