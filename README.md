@@ -18,12 +18,8 @@ This project develops a machine learning model to predict customer churn and pro
 ```
 customer_churn_project/
 ├── data/
+│   ├── telco_churn_engineered.csv
 │   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
-├── notebooks/
-│   ├── data_exploration.ipynb
-│   ├── feature_engineering.ipynb
-│   ├── model_training.ipynb
-│   └── business_analysis.ipynb
 ├── src/
 │   ├── __init__.py
 │   ├── data_processor.py
@@ -33,15 +29,18 @@ customer_churn_project/
 ├── app/
 │   ├── app.py
 │   └── pages/
+│       ├── __init__.py
 │       ├── overview.py
 │       ├── customer_prediction.py
 │       ├── segment_analysis.py
-│       └── retention_strategies.py
+|       ├── retention_strategies.py
+│       └── ab_testing.py
 ├── models/
 │   ├── churn_model.pkl
 │   └── X_train_columns.csv
 ├── requirements.txt
 ├── run.py
+├── setup.py
 └── README.md
 ```
 
@@ -81,15 +80,6 @@ python setup.py
 ```
 at first and call `run.py` for next times.
 
-### 3. Explore the Notebooks
-
-The Jupyter notebooks contain detailed analysis:
-
-- `data_exploration.ipynb`: Initial data analysis and insights
-- `feature_engineering.ipynb`: Feature creation and transformation
-- `model_training.ipynb`: Model development and evaluation
-- `business_analysis.ipynb`: Business impact and strategy development
-
 ## Dashboard Features
 
 The interactive dashboard includes:
@@ -98,6 +88,7 @@ The interactive dashboard includes:
 - **Customer Prediction**: Predict churn risk for individual customers
 - **Segment Analysis**: Analyze customer segments and their characteristics
 - **Retention Strategies**: Evaluate and compare retention interventions
+- **A/B Testing for Retention Strategies**: Test the impact of retention interventions on reducing the churn rate
 
 ## Model Performance
 

@@ -113,7 +113,7 @@ def main():
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Select a page",
-        ["Overview", "Customer Prediction", "Segment Analysis", "Retention Strategies", "A/B Testing"]
+        ["Overview", "Customer Prediction", "Segment Analysis", "Retention Strategies", "A/B Testing for Retention Strategies"]
     )
     
     # Load data (cached for performance)
@@ -160,7 +160,7 @@ def main():
         show_segment_analysis(df)
     elif page == "Retention Strategies":
         show_retention_strategies(df)
-    elif page == "A/B Testing":
+    elif page == "A/B Testing for Retention Strategies":
         show_ab_testing(df, model, X_train_columns)
 
 if __name__ == "__main__":

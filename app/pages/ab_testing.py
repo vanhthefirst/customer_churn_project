@@ -432,16 +432,25 @@ def show_ab_testing(df, model=None, X_train_columns=None):
             churn_rates = [control_churn_rate, test_churn_rate_baseline, test_churn_rate_treated]
             colors = ['#dddddd', '#ffb3b3', '#b3e6b3']
             
-            bars = ax1.bar(groups, churn_rates, color=colors)
+            # Ensure minimum scale for churn rates display 
+            max_rate = max(churn_rates) if max(churn_rates) > 0 else 0.5
+            min_rate = 0  # Always start at 0
+            
+            # Add small offset for zero values to ensure bars are visible
+            display_rates = [max(rate, 0.01) for rate in churn_rates]
+            
+            bars = ax1.bar(groups, display_rates, color=colors)
             
             ax1.set_title('Churn Rate Comparison')
             ax1.set_ylabel('Churn Rate (%)')
+            ax1.set_ylim(min_rate, max_rate * 1.2)  # Add 20% padding to top
             
-            # Add value labels
-            for bar in bars:
-                height = bar.get_height()
-                ax1.text(bar.get_x() + bar.get_width()/2., height + 0.5,
-                        f'{height:.1f}%', ha='center', va='bottom')
+            # Add value labels (show actual values, not display values)
+            for i, bar in enumerate(bars):
+                height = churn_rates[i]
+                ax1.text(bar.get_x() + bar.get_width()/2., 
+                         display_rates[i] + max_rate * 0.05,
+                         f'{height:.2f}%', ha='center', va='bottom')
             
             st.pyplot(fig1)
         
@@ -453,16 +462,41 @@ def show_ab_testing(df, model=None, X_train_columns=None):
             values = [total_cost, annual_revenue_saved]
             colors = ['#ff9999', '#99ff99']
             
+            # Handle zero revenue saved case
+            if annual_revenue_saved < 1:
+                # Create a note about zero revenue
+                revenue_note = "(No measurable revenue impact)"
+            else:
+                revenue_note = ""
+            
             bars = ax2.bar(labels, values, color=colors)
             
             ax2.set_title('Cost vs. Revenue Impact')
             ax2.set_ylabel('Amount ($)')
             
-            # Add value labels
-            for bar in bars:
-                height = bar.get_height()
-                ax2.text(bar.get_x() + bar.get_width()/2., height * 0.5,
-                        f'${height:,.0f}', ha='center', va='center', color='black', fontweight='bold')
+            # Add value labels with special handling for zero values
+            for i, bar in enumerate(bars):
+                height = values[i]
+                if i == 1 and height < 1:  # Revenue saved near zero
+                    label_text = f"${height:.2f}\n{revenue_note}"
+                else:
+                    label_text = f"${height:,.0f}"
+                
+                # Position for zero or near-zero values
+                if height < 1:
+                    y_pos = max(values) * 0.05  # Small percentage of max height
+                    va = 'bottom'
+                else:
+                    y_pos = height * 0.5
+                    va = 'center'
+                
+                ax2.text(bar.get_x() + bar.get_width()/2., y_pos,
+                         label_text, ha='center', va=va, 
+                         color='black', fontweight='bold')
+            
+            # Ensure y-axis has reasonable scale
+            if annual_revenue_saved < total_cost * 0.05:  # If revenue is less than 5% of cost
+                ax2.set_ylim(0, total_cost * 1.2)  # Set y limit based on cost
             
             st.pyplot(fig2)
         
@@ -490,6 +524,15 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         ax3.plot(months, cumulative_savings, 'g-', label='Cumulative Revenue Saved')
         ax3.plot(months, net_impact, 'b-', label='Net Impact')
         
+        # Handle case where all values are zero
+        if max(cumulative_savings) < 1:
+            # Add annotation about no measurable revenue
+            ax3.annotate('No measurable revenue impact', 
+                         xy=(6, cumulative_costs[5]/2),
+                         ha='center', 
+                         fontsize=12,
+                         bbox=dict(boxstyle="round,pad=0.5", fc="yellow", alpha=0.7))
+        
         # Add breakeven point
         if any(net_impact > 0):
             breakeven_month = next((i+1 for i, impact in enumerate(net_impact) if impact > 0), None)
@@ -502,6 +545,13 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         ax3.set_xlabel('Month')
         ax3.set_ylabel('Amount ($)')
         ax3.set_xticks(months)
+        
+        # Set appropriate y-axis scale
+        if max(cumulative_savings) < max(cumulative_costs) * 0.05:
+            y_max = max(cumulative_costs) * 1.2
+            y_min = min(net_impact) * 1.2 if min(net_impact) < 0 else -max(cumulative_costs) * 0.1
+            ax3.set_ylim(y_min, y_max)
+        
         ax3.legend()
         
         st.pyplot(fig3)
@@ -524,27 +574,46 @@ def show_ab_testing(df, model=None, X_train_columns=None):
             test_roi = (test_annual_saved - total_cost) / total_cost * 100 if total_cost > 0 else 0
             roi_values.append(test_roi)
         
-        # Plot sensitivity
-        ax_sens.plot(retention_rates * 100, roi_values, 'bo-')
+        # Handle case where baseline churn is zero or near-zero
+        if test_churn_rate_baseline < 0.01:
+            # Create an annotation explaining why all ROIs are negative
+            ax_sens.text(0.5, 0.5, 
+                        "Insufficient baseline churn to generate positive ROI.\nThe test group has minimal churn risk.", 
+                        ha='center', va='center', 
+                        transform=ax_sens.transAxes,
+                        bbox=dict(boxstyle="round,pad=0.5", fc="yellow", alpha=0.7),
+                        fontsize=12)
+            
+            # Still plot the flat line for consistency
+            ax_sens.plot(retention_rates * 100, roi_values, 'bo-')
+            
+        else:
+            # Normal case - plot sensitivity
+            ax_sens.plot(retention_rates * 100, roi_values, 'bo-')
+            
+            # Add breakeven point
+            if min(roi_values) < 0 and max(roi_values) > 0:
+                # Find approx breakeven point (where ROI = 0)
+                for i in range(len(roi_values)-1):
+                    if (roi_values[i] < 0 and roi_values[i+1] > 0) or (roi_values[i] > 0 and roi_values[i+1] < 0):
+                        # Linear interpolation to find breakeven
+                        x1, y1 = retention_rates[i] * 100, roi_values[i]
+                        x2, y2 = retention_rates[i+1] * 100, roi_values[i+1]
+                        breakeven_x = x1 + (x2 - x1) * (0 - y1) / (y2 - y1)
+                        ax_sens.axvline(x=breakeven_x, color='g', linestyle='--', alpha=0.7)
+                        ax_sens.text(breakeven_x + 1, 20, f'Break-even: {breakeven_x:.1f}%', 
+                                    color='g', fontweight='bold')
+                        break
+        
         ax_sens.axhline(y=0, color='r', linestyle='-', alpha=0.3)
         ax_sens.set_xlabel('Retention Rate (%)')
         ax_sens.set_ylabel('ROI (%)')
         ax_sens.set_title('ROI Sensitivity to Retention Rate')
         ax_sens.grid(True, alpha=0.3)
         
-        # Add breakeven point
-        if min(roi_values) < 0 and max(roi_values) > 0:
-            # Find approx breakeven point (where ROI = 0)
-            for i in range(len(roi_values)-1):
-                if (roi_values[i] < 0 and roi_values[i+1] > 0) or (roi_values[i] > 0 and roi_values[i+1] < 0):
-                    # Linear interpolation to find breakeven
-                    x1, y1 = retention_rates[i] * 100, roi_values[i]
-                    x2, y2 = retention_rates[i+1] * 100, roi_values[i+1]
-                    breakeven_x = x1 + (x2 - x1) * (0 - y1) / (y2 - y1)
-                    ax_sens.axvline(x=breakeven_x, color='g', linestyle='--', alpha=0.7)
-                    ax_sens.text(breakeven_x + 1, 20, f'Break-even: {breakeven_x:.1f}%', 
-                                color='g', fontweight='bold')
-                    break
+        # Set reasonable y-limits that won't break with extreme negative values
+        if min(roi_values) < -100:
+            ax_sens.set_ylim(-100, max(50, max(roi_values) * 1.1))
         
         st.pyplot(fig_sens)
         
