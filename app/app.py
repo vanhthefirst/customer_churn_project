@@ -65,7 +65,7 @@ def find_model_files():
     return model_path, columns_path
 
 # Cache data loading to improve performance - allow mutations
-@st.cache(allow_output_mutation=True)
+@st.cache_data
 def load_and_prepare_data():
     """Load, preprocess data and add predictions without Streamlit UI calls"""
     # Find data and model files

@@ -57,7 +57,7 @@ def show_overview(df, metrics):
     with col5:
         fig, ax = plt.subplots(figsize=(10, 6))
         colors = ['#2ECC71', '#3498DB', '#F39C12', '#E74C3C']  # Green to red
-        sns.barplot(x='Risk Segment', y='Count', data=risk_dist, palette=colors, ax=ax)
+        sns.barplot(x='Risk Segment', y='Count', hue='Risk Segment', data=risk_dist, palette=colors, legend=False, ax=ax)
         ax.set_title('Customer Distribution by Risk Segment')
         ax.set_ylabel('Number of Customers')
         st.pyplot(fig)

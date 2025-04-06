@@ -9,14 +9,12 @@ import seaborn as sns
 import copy
 
 def show_customer_prediction(model, X_train_columns):
-    """Display customer prediction form and results"""
     st.header("Customer Churn Prediction")
     st.markdown("""
     Use this form to predict churn probability for individual customers. 
     Enter customer characteristics and click 'Predict' to see the results.
     """)
     
-    # Create columns for input form
     col1, col2 = st.columns(2)
     
     with col1:
@@ -69,12 +67,9 @@ def show_customer_prediction(model, X_train_columns):
         total_charges = monthly_charges * tenure
         st.info(f"Total Charges: ${total_charges:.2f}")
     
-    # Create predict button
     predict_button = st.button("Predict Churn Probability", type="primary")
     
-    # Prediction section
     if predict_button:
-        # Create input data dictionary
         input_data = {
             'gender': gender,
             'SeniorCitizen': 1 if senior_citizen == "Yes" else 0,
@@ -97,27 +92,19 @@ def show_customer_prediction(model, X_train_columns):
             'TotalCharges': total_charges
         }
         
-        # Create DataFrame from input data
         input_df = pd.DataFrame([input_data])
         
-        # Feature engineering
-        # Total services
         input_df['TotalServices'] = input_df[['OnlineSecurity', 'OnlineBackup', 'DeviceProtection',
                                'TechSupport', 'StreamingTV', 'StreamingMovies']].apply(
             lambda row: sum(1 for item in row if item not in ['No', 'No internet service']), axis=1
         )
-        
-        # Service flags
         input_df['HasTechSupport'] = input_df['TechSupport'].apply(lambda x: 1 if x == 'Yes' else 0)
         input_df['HasOnlineSecurity'] = input_df['OnlineSecurity'].apply(lambda x: 1 if x == 'Yes' else 0)
         input_df['StreamingServices'] = ((input_df['StreamingTV'] == 'Yes') & 
                                     (input_df['StreamingMovies'] == 'Yes')).astype(int)
-        
-        # Financial metrics
         input_df['CLV'] = input_df['tenure'] * input_df['MonthlyCharges']
         input_df['AvgMonthlySpend'] = input_df['TotalCharges'] / input_df['tenure'].replace(0, 1)
         
-        # Categorical features (using numeric TenureGroup)
         tenure_bins = [0, 12, 24, 36, 48, 60, np.inf]
         input_df['TenureGroup'] = pd.cut(input_df['tenure'], bins=tenure_bins, labels=False)
         
@@ -127,29 +114,21 @@ def show_customer_prediction(model, X_train_columns):
             'Two year': 0
         })
         
-        # Prepare for model prediction - one-hot encoding
         cat_cols = input_df.select_dtypes(include=['object']).columns
         input_encoded = pd.get_dummies(input_df, columns=cat_cols, drop_first=True)
         
-        # Create a copy of the columns list to avoid mutation warnings
         columns_for_model = X_train_columns.copy()
+        model_input = pd.DataFrame(index=[0], columns=columns_for_model, dtype=float)
+        model_input.fillna(0.0, inplace=True)
         
-        # Align with training columns
-        model_input = pd.DataFrame(index=[0], columns=columns_for_model).fillna(0)
-        
-        # Copy values from input_encoded to model_input for columns that exist in both
         for col in input_encoded.columns:
             if col in model_input.columns:
                 model_input[col] = input_encoded[col].values
         
-        # Make prediction
         try:
             churn_probability = model.predict_proba(model_input)[0, 1]
-            
-            # Display prediction results
             st.header("Prediction Results")
             
-            # Determine risk category
             if churn_probability < 0.25:
                 risk_category = "Low Risk"
                 color = "green"
@@ -163,41 +142,42 @@ def show_customer_prediction(model, X_train_columns):
                 risk_category = "High Risk"
                 color = "red"
             
-            # Create nice visualization for prediction
             col3, col4 = st.columns([1, 1])
             
             with col3:
-                # Create gauge chart
                 fig, ax = plt.subplots(figsize=(8, 4), subplot_kw={'projection': 'polar'})
-                
-                # Gauge settings
+
                 theta = np.linspace(0, 180, 100) * np.pi / 180
                 r = [1] * 100
+
+                safe_churn_prob = 0.0
+                try:
+                    safe_churn_prob = float(churn_probability)
+                    if not np.isfinite(safe_churn_prob):
+                        safe_churn_prob = 0.0
+                    safe_churn_prob = min(max(safe_churn_prob, 0.0), 1.0)
+                except:
+                    safe_churn_prob = 0.0
+
+                ax.bar(float(np.pi/2), 1.0, width=float(np.pi), bottom=0.0, color='lightgray', alpha=0.5)
+                ax.plot(theta, r, color='lightgray', alpha=0.5)
                 
-                # Plot background
-                ax.bar(np.pi/2, 1, width=np.pi, bottom=0, color='lightgray', alpha=0.5)
+                width = float(np.pi * safe_churn_prob)
+                ax.bar(float(np.pi/2), 1.0, width=width, bottom=0.0, color=color, alpha=0.8)
                 
-                # Fill gauge based on probability
-                width = np.pi * churn_probability
-                ax.bar(np.pi/2, 1, width=width, bottom=0, color=color, alpha=0.8)
-                
-                # Remove unnecessary elements
                 ax.set_xticks([])
                 ax.set_yticks([])
                 ax.spines.clear()
                 
-                # Add text labels
-                ax.text(np.pi/2, 0.5, f"{churn_probability:.1%}", ha='center', va='center', fontsize=24)
-                ax.text(np.pi/2, 0.2, "Churn Probability", ha='center', va='center', fontsize=12)
-                
-                # Add risk category
-                ax.text(np.pi/2, -0.2, risk_category, ha='center', va='center', 
-                      fontsize=14, fontweight='bold', color=color)
-                
+                safe_coords = float(np.pi/2)
+                ax.text(safe_coords, 0.5, f"{safe_churn_prob:.1%}", ha='center', va='center', fontsize=24)
+                ax.text(safe_coords, 0.2, "Churn Probability", ha='center', va='center', fontsize=12)
+                ax.text(safe_coords, -0.2, risk_category, ha='center', va='center', 
+                    fontsize=14, fontweight='bold', color=color)
+                                
                 st.pyplot(fig)
             
             with col4:
-                # Display key risk factors
                 st.subheader("Key Risk Factors")
                 
                 risk_factors = []
@@ -224,7 +204,6 @@ def show_customer_prediction(model, X_train_columns):
                 else:
                     st.markdown("✅ No major risk factors identified")
                 
-                # Retention recommendations
                 st.subheader("Retention Recommendations")
                 
                 if churn_probability > 0.5:

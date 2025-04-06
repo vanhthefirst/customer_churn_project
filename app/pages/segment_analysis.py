@@ -15,22 +15,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from src.business_analysis import get_segment_insights
 
 def show_segment_analysis(df):
-    """Display segment analysis dashboard"""
-    # Make a copy of the dataframe to avoid mutations
     df = copy.deepcopy(df)
     
-    # Header
     st.header("Customer Segment Analysis")
     st.write("Analyze different customer segments to understand their characteristics, churn patterns, and business impact.")
-    
-    # Segment Type Selection
+
     segment_type = st.selectbox(
         "Select Segment Type",
         ["Risk Level", "Contract Type", "Internet Service", "Tenure Group", "Payment Method"],
         key="segment_type_selector"
     )
-    
-    # Map segment type to dataframe column
+
     segment_column_map = {
         "Risk Level": "risk_segment",
         "Contract Type": "Contract",
@@ -40,10 +35,7 @@ def show_segment_analysis(df):
     }
     
     segment_column = segment_column_map[segment_type]
-    
-    # Handle segment selection based on type
     if segment_column == "TenureGroup" and df[segment_column].dtype in [np.int64, np.float64]:
-        # Create labels for display
         tenure_map = {
             0: '0-1 year',
             1: '1-2 years', 
@@ -395,7 +387,11 @@ def show_segment_analysis(df):
                 
                 sns.barplot(x='Tenure Group', y='Segment (%)', data=tenure_data, ax=fin_ax[1])
                 fin_ax[1].set_title('Tenure Distribution')
-                fin_ax[1].set_xticklabels(fin_ax[1].get_xticklabels(), rotation=45)
+                locs = fin_ax[1].get_xticks()
+                labels = [item.get_text() for item in fin_ax[1].get_xticklabels()]
+                fin_ax[1].set_xticks(locs)
+                fin_ax[1].set_xticklabels(labels, rotation=45)
+
             elif 'tenure' in segment_df.columns:
                 # Use tenure if TenureGroup is unavailable
                 segment_df_copy = segment_df.copy()
@@ -506,7 +502,10 @@ def show_segment_analysis(df):
             
             ax.set_title(title)
             ax.set_ylabel('Churn Rate (%)')
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+            locs = ax.get_xticks()
+            labels = [item.get_text() for item in ax.get_xticklabels()]
+            ax.set_xticks(locs)
+            ax.set_xticklabels(labels, rotation=45)
             
             plt.tight_layout()
             st.pyplot(fig)
