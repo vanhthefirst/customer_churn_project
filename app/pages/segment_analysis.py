@@ -15,17 +15,22 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from src.business_analysis import get_segment_insights
 
 def show_segment_analysis(df):
+    """Display segment analysis dashboard"""
+    # Make a copy of the dataframe to avoid mutations
     df = copy.deepcopy(df)
     
+    # Header
     st.header("Customer Segment Analysis")
     st.write("Analyze different customer segments to understand their characteristics, churn patterns, and business impact.")
-
+    
+    # Segment Type Selection
     segment_type = st.selectbox(
         "Select Segment Type",
         ["Risk Level", "Contract Type", "Internet Service", "Tenure Group", "Payment Method"],
         key="segment_type_selector"
     )
-
+    
+    # Map segment type to dataframe column
     segment_column_map = {
         "Risk Level": "risk_segment",
         "Contract Type": "Contract",
@@ -35,7 +40,10 @@ def show_segment_analysis(df):
     }
     
     segment_column = segment_column_map[segment_type]
+    
+    # Handle segment selection based on type
     if segment_column == "TenureGroup" and df[segment_column].dtype in [np.int64, np.float64]:
+        # Create labels for display
         tenure_map = {
             0: '0-1 year',
             1: '1-2 years', 
@@ -213,8 +221,13 @@ def show_segment_analysis(df):
             ax.legend()
             
             # Rotate x labels for better readability
-            plt.xticks(rotation=45)
-            plt.tight_layout()
+            locs = ax.get_xticks()
+            labels = [item for item in services]
+            ax.set_xticks(locs)
+            ax.set_xticklabels(labels, rotation=45)
+            
+            # Use figure-specific tight_layout
+            fig.tight_layout(pad=2.0)
             
             st.pyplot(fig)
         else:
@@ -226,7 +239,7 @@ def show_segment_analysis(df):
         
         try:
             # Create 2x2 grid of demographic charts
-            demo_fig, demo_ax = plt.subplots(2, 2, figsize=(12, 10))
+            demo_fig, demo_ax = plt.subplots(2, 2, figsize=(14, 12))
             demo_ax = demo_ax.flatten()
             
             # Gender distribution
@@ -309,7 +322,12 @@ def show_segment_analysis(df):
                 sns.barplot(x='Dependents', y='Segment (%)', data=dependents_data, ax=demo_ax[3])
                 demo_ax[3].set_title('Dependents Distribution')
             
-            plt.tight_layout()
+            # Adjust spacing for demographic plots
+            demo_fig.subplots_adjust(hspace=0.3, wspace=0.3)
+            
+            # Use constrained_layout instead of tight_layout
+            demo_fig.set_constrained_layout(True)
+            
             st.pyplot(demo_fig)
         except Exception as e:
             st.error(f"Error creating demographics plots: {str(e)}")
@@ -321,7 +339,7 @@ def show_segment_analysis(df):
         
         try:
             # Create 2x1 grid of financial charts
-            fin_fig, fin_ax = plt.subplots(2, 1, figsize=(10, 10))
+            fin_fig, fin_ax = plt.subplots(2, 1, figsize=(10, 12))
             
             # Monthly charges distribution
             if 'MonthlyCharges' in segment_df.columns:
@@ -387,11 +405,13 @@ def show_segment_analysis(df):
                 
                 sns.barplot(x='Tenure Group', y='Segment (%)', data=tenure_data, ax=fin_ax[1])
                 fin_ax[1].set_title('Tenure Distribution')
+                
+                # Fix tick labels by setting ticks explicitly
                 locs = fin_ax[1].get_xticks()
-                labels = [item.get_text() for item in fin_ax[1].get_xticklabels()]
-                fin_ax[1].set_xticks(locs)
+                labels = [str(item) for item in tenure_data['Tenure Group']]
+                fin_ax[1].set_xticks(locs[:len(labels)])
                 fin_ax[1].set_xticklabels(labels, rotation=45)
-
+                
             elif 'tenure' in segment_df.columns:
                 # Use tenure if TenureGroup is unavailable
                 segment_df_copy = segment_df.copy()
@@ -413,9 +433,16 @@ def show_segment_analysis(df):
                 
                 sns.barplot(x='Tenure Group', y='Segment (%)', data=tenure_data, ax=fin_ax[1])
                 fin_ax[1].set_title('Tenure Distribution')
-                fin_ax[1].set_xticklabels(fin_ax[1].get_xticklabels(), rotation=45)
+                
+                # Fix tick labels by setting ticks explicitly
+                locs = fin_ax[1].get_xticks()
+                labels = [str(item) for item in tenure_data['Tenure Group']]
+                fin_ax[1].set_xticks(locs[:len(labels)])
+                fin_ax[1].set_xticklabels(labels, rotation=45)
             
-            plt.tight_layout()
+            # Adjust financial plot spacing
+            fin_fig.subplots_adjust(hspace=0.4)
+            
             st.pyplot(fin_fig)
         except Exception as e:
             st.error(f"Error creating financial plots: {str(e)}")
@@ -502,12 +529,20 @@ def show_segment_analysis(df):
             
             ax.set_title(title)
             ax.set_ylabel('Churn Rate (%)')
+            
+            # Fix tick labels by explicitly setting them
             locs = ax.get_xticks()
-            labels = [item.get_text() for item in ax.get_xticklabels()]
-            ax.set_xticks(locs)
+            if internal_segment == "TenureGroup" and segment_df[internal_segment].dtype in [np.int64, np.float64]:
+                labels = internal_churn_data['TenureGroup'].tolist()
+            else:
+                labels = internal_churn_data[internal_segment].tolist()
+            
+            ax.set_xticks(locs[:len(labels)])
             ax.set_xticklabels(labels, rotation=45)
             
-            plt.tight_layout()
+            # Adjust margins to fit rotated labels
+            fig.subplots_adjust(bottom=0.2)
+            
             st.pyplot(fig)
         else:
             st.info("No appropriate dimensions available for internal segment analysis.")

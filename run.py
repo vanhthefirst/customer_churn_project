@@ -24,7 +24,6 @@ def train_model():
     print("Engineering features...")
     df = engineer_features(df)
     
-    # Save engineered data
     os.makedirs('data', exist_ok=True)
     df.to_csv('data/telco_churn_engineered.csv', index=False)
     print("Engineered data saved to data/telco_churn_engineered.csv")
@@ -36,10 +35,7 @@ def train_model():
     print("Training Random Forest model...")
     model, _ = train_random_forest(X_train, y_train, X_test, y_test)
     
-    # Create models directory if it doesn't exist
     os.makedirs('models', exist_ok=True)
-    
-    # Save model and column information
     save_model(model, 'models/churn_model.pkl')
     save_column_info(X_train, 'models/X_train_columns.csv')
     
@@ -50,11 +46,35 @@ def launch_dashboard():
     """Launch the Streamlit dashboard"""
     try:
         print("Starting Streamlit dashboard...")
-        subprocess.run(["streamlit", "run", "app/app.py"])
+        print("Press Ctrl+C to stop the dashboard")
+
+        process = subprocess.Popen(["streamlit", "run", "app/app.py"])
+        process.wait()
+        return True
     except FileNotFoundError:
         print("Error: Streamlit not found. Please install it with 'pip install streamlit'")
         return False
-    return True
+    except KeyboardInterrupt:
+        print("\nStreamlit dashboard stopped by user.")
+        
+        if 'process' in locals() and process:
+            print("Shutting down streamlit process...")
+            try:
+                # Send termination signal
+                process.terminate()
+                # Wait briefly for graceful shutdown
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                # If it doesn't terminate gracefully, force kill
+                print("Forcing process to shut down...")
+                process.kill()
+            except Exception as e:
+                print(f"Error while shutting down: {e}")
+        
+        return True
+    except Exception as e:
+        print(f"Error running Streamlit dashboard: {e}")
+        return False
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Customer Churn Prediction & Retention Strategy')
