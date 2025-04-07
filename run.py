@@ -5,12 +5,11 @@ Run script for model training and dashboard startup
 import os
 import argparse
 import pandas as pd
-import pickle
 import subprocess
 import sys
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
 
 def train_model():
-    """Train and save the churn prediction model"""
     from src.data_processor import preprocess_data
     from src.feature_engineering import engineer_features
     from src.model_trainer import (
@@ -33,7 +32,20 @@ def train_model():
     X_train, X_test, y_train, y_test = split_data(X, y)
     
     print("Training Random Forest model...")
-    model, _ = train_random_forest(X_train, y_train, X_test, y_test)
+    model, auc = train_random_forest(X_train, y_train, X_test, y_test)
+
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+
+    print("\nModel Performance Summary:")
+    print(f"AUC:       {auc:.4f}")
+    print(f"Accuracy:  {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall:    {recall:.4f}")
+    print(f"F1-Score:  {f1:.4f}")
     
     os.makedirs('models', exist_ok=True)
     save_model(model, 'models/churn_model.pkl')
@@ -43,7 +55,6 @@ def train_model():
     return True
 
 def launch_dashboard():
-    """Launch the Streamlit dashboard"""
     try:
         print("Starting Streamlit dashboard...")
         print("Press Ctrl+C to stop the dashboard")
@@ -60,12 +71,9 @@ def launch_dashboard():
         if 'process' in locals() and process:
             print("Shutting down streamlit process...")
             try:
-                # Send termination signal
                 process.terminate()
-                # Wait briefly for graceful shutdown
                 process.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                # If it doesn't terminate gracefully, force kill
                 print("Forcing process to shut down...")
                 process.kill()
             except Exception as e:
