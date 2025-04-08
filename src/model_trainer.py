@@ -16,7 +16,6 @@ def prepare_modeling_data(df):
     X = df.drop('Churn', axis=1)
     y = df['Churn'] 
 
-    # Remove customerID as it's not a predictor
     if 'customerID' in X.columns:
         X = X.drop('customerID', axis=1)
 
@@ -31,10 +30,7 @@ def prepare_modeling_data(df):
         for col in cat_cols:
             X[col] = X[col].fillna(X[col].mode()[0] if not X[col].mode().empty else "Unknown")
 
-    # Get all categorical columns that still need encoding
     cat_cols = X.select_dtypes(include=['object']).columns
-    
-    # One-hot encode the categorical variables
     X_encoded = pd.get_dummies(X, columns=cat_cols, drop_first=True)
 
     if X_encoded.isnull().any().any():
@@ -53,11 +49,9 @@ def split_data(X, y, test_size=0.2, random_state=42):
     return X_train, X_test, y_train, y_test
 
 def train_logistic_regression(X_train, y_train, X_test, y_test):
-    # Train baseline logistic regression
     lr_model = LogisticRegression(max_iter=1000, random_state=42)
     lr_model.fit(X_train, y_train)
-    
-    # Evaluate model
+
     lr_pred = lr_model.predict_proba(X_test)[:, 1]
     lr_auc = roc_auc_score(y_test, lr_pred)
     print(f"Logistic Regression AUC: {lr_auc:.4f}")
@@ -65,7 +59,6 @@ def train_logistic_regression(X_train, y_train, X_test, y_test):
     return lr_model, lr_auc
 
 def train_random_forest(X_train, y_train, X_test, y_test, param_grid=None):
-    # Default parameter grid if none provided
     if param_grid is None:
         param_grid = {
             'n_estimators': [100],
@@ -74,11 +67,9 @@ def train_random_forest(X_train, y_train, X_test, y_test, param_grid=None):
             'min_samples_leaf': [1]
         }
 
-    # Initialize random forest and grid search
     rf = RandomForestClassifier(random_state=42)
     rf.fit(X_train, y_train)
 
-    # Get best model
     rf_pred_proba = rf.predict_proba(X_test)[:, 1]
     rf_pred = rf.predict(X_test)
 
@@ -94,14 +85,6 @@ def train_random_forest(X_train, y_train, X_test, y_test, param_grid=None):
     print(f"  - Precision: {rf_precision:.4f}")
     print(f"  - Recall: {rf_recall:.4f}")
     print(f"  - F1-Score: {rf_f1:.4f}")
-
-    metrics = {
-        'auc': rf_auc,
-        'accuracy': rf_accuracy,
-        'precision': rf_precision,
-        'recall': rf_recall,
-        'f1': rf_f1
-    }
 
     return rf, rf_auc
 

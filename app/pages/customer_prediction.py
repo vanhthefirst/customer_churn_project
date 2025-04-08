@@ -196,8 +196,7 @@ def show_customer_prediction(model, X_train_columns):
                     
                 if input_df['TotalServices'].values[0] <= 1 and internet_service != "No":
                     risk_factors.append("Low service adoption")
-                
-                # Display risk factors or safe factors
+
                 if risk_factors:
                     for factor in risk_factors:
                         st.markdown(f"⚠️ **{factor}**")

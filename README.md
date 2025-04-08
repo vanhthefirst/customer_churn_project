@@ -87,11 +87,9 @@ The interactive dashboard includes:
 ## Model Performance
 
 The model achieves:
-- AUC (Area Under ROC Curve): 0.8267
-- Accuracy:                   0.7935
-- Precision:                  0.6397
-- Recall:                     0.5080
-- F1 Score:                   0.5663
+```
+AUC (Area Under ROC Curve): 0.8267  Accuracy: 0.7935  Precision: 0.6397  Recall: 0.5080  F1 Score: 0.5663
+```
 
 ## Key Findings
 

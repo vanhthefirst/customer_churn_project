@@ -3,3 +3,4 @@ __pycache__/
 **/__pycache__/
 
 /models/
+/data/telco_churn_engineered.csv

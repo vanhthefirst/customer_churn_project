@@ -14,14 +14,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from src.business_analysis import calculate_roi
 
 def show_retention_strategies(df):
-    """Display retention strategies dashboard"""
     st.header("Retention Strategy Recommendations")
     st.markdown("""
     This dashboard evaluates potential retention strategies and calculates their expected ROI.
     Compare different interventions to identify the most cost-effective approaches.
     """)
-    
-    # Define potential retention strategies
+
     retention_strategies = {
         'High Risk': [
             {
@@ -74,24 +72,20 @@ def show_retention_strategies(df):
             }
         ]
     }
-    
-    # Select risk segment for analysis
+
     risk_segment = st.selectbox(
         "Select risk segment to analyze", 
         ["High Risk", "Medium-High Risk", "Medium-Low Risk", "Low Risk"],
         index=0
     )
-    
-    # Display strategies for selected segment
+
     st.subheader(f"Retention Strategies for {risk_segment} Segment")
-    
-    # Create segment filter
+
     segment_customers = df[df['risk_segment'] == risk_segment]
     num_customers = len(segment_customers)
     monthly_revenue = segment_customers['MonthlyCharges'].sum()
     annual_revenue = monthly_revenue * 12
-    
-    # Display segment metrics
+
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Customers in Segment", f"{num_customers:,}")
@@ -99,26 +93,22 @@ def show_retention_strategies(df):
         st.metric("Monthly Revenue", f"${monthly_revenue:,.2f}")
     with col3:
         st.metric("Annual Revenue", f"${annual_revenue:,.2f}")
-    
-    # Display strategies
+
     st.subheader("Available Strategies")
     
     if risk_segment in retention_strategies:
         strategies = retention_strategies[risk_segment]
-        
-        # For each strategy in the segment
+
         for i, strategy in enumerate(strategies):
             with st.expander(f"Strategy {i+1}: {strategy['name']}", expanded=True if i == 0 else False):
                 st.markdown(f"**Description**: {strategy['description']}")
                 st.markdown(f"**Target**: {strategy['target_segment']}")
-                
-                # Create hypothetical target segment
+
                 if "month-to-month" in strategy['target_segment'].lower():
                     target_df = segment_customers[segment_customers['Contract'] == 'Month-to-month']
                 elif "fiber" in strategy['target_segment'].lower():
                     target_df = segment_customers[(segment_customers['InternetService'] == 'Fiber optic')]
                 elif "high" in strategy['target_segment'].lower() and "charge" in strategy['target_segment'].lower():
-                    # Customers with above median charges
                     charge_threshold = df['MonthlyCharges'].median()
                     target_df = segment_customers[segment_customers['MonthlyCharges'] > charge_threshold]
                 elif "12+" in strategy['target_segment'].lower() or "tenure" in strategy['target_segment'].lower():
@@ -126,15 +116,13 @@ def show_retention_strategies(df):
                 else:
                     # Default to all segment customers
                     target_df = segment_customers
-                
-                # Calculate ROI
+
                 roi_data = calculate_roi(
                     target_df, 
                     strategy['cost_per_customer'],
                     strategy['estimated_retention_rate']
                 )
-                
-                # Display ROI metrics
+
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("Customers Targeted", f"{roi_data['customers_targeted']:,}")
@@ -148,11 +136,9 @@ def show_retention_strategies(df):
                     st.metric("Revenue Saved", f"${roi_data['potential_annual_revenue_saved']:,.2f}")
                     roi_pct = roi_data['estimated_roi'] * 100
                     st.metric("ROI", f"{roi_pct:.1f}%", delta="positive" if roi_pct > 0 else "negative")
-                
-                # Visualization of costs vs benefits
+
                 fig, ax = plt.subplots(figsize=(10, 5))
-                
-                # Create bar chart
+
                 labels = ['Cost', 'Revenue Saved']
                 values = [roi_data['intervention_cost'], roi_data['potential_annual_revenue_saved']]
                 colors = ['#ff9999', '#66b3ff']
@@ -160,32 +146,27 @@ def show_retention_strategies(df):
                 ax.bar(labels, values, color=colors)
                 ax.set_title('Cost vs. Revenue Saved')
                 ax.set_ylabel('Amount ($)')
-                
-                # Add value labels on bars
+
                 for i, v in enumerate(values):
                     ax.text(i, v/2, f"${v:,.0f}", ha='center', fontweight='bold', color='white')
                 
                 st.pyplot(fig)
     else:
         st.info("No strategies defined for this segment.")
-    
-    # Strategy comparison across segments
+
     st.subheader("Strategy Comparison")
-    
-    # Create data for comparison
+
     comparison_data = []
     
     for segment, strategies in retention_strategies.items():
         segment_customers = df[df['risk_segment'] == segment]
         
         for strategy in strategies:
-            # Create target segment based on strategy description
             if "month-to-month" in strategy['target_segment'].lower():
                 target_df = segment_customers[segment_customers['Contract'] == 'Month-to-month']
             elif "fiber" in strategy['target_segment'].lower():
                 target_df = segment_customers[(segment_customers['InternetService'] == 'Fiber optic')]
             elif "high" in strategy['target_segment'].lower() and "charge" in strategy['target_segment'].lower():
-                # Customers with above median charges
                 charge_threshold = df['MonthlyCharges'].median()
                 target_df = segment_customers[segment_customers['MonthlyCharges'] > charge_threshold]
             elif "12+" in strategy['target_segment'].lower() or "tenure" in strategy['target_segment'].lower():
@@ -193,8 +174,7 @@ def show_retention_strategies(df):
             else:
                 # Default to all segment customers
                 target_df = segment_customers
-            
-            # Calculate ROI
+
             if len(target_df) > 0:
                 roi_data = calculate_roi(
                     target_df, 
@@ -213,17 +193,13 @@ def show_retention_strategies(df):
     
     if comparison_data:
         comparison_df = pd.DataFrame(comparison_data)
-        
-        # Sort by ROI descending
+
         comparison_df = comparison_df.sort_values('ROI %', ascending=False)
-        
-        # Display as table
+
         st.dataframe(comparison_df)
-        
-        # Plot ROI comparison
+
         fig, ax = plt.subplots(figsize=(10, 5))
-        
-        # Create bar chart of ROI by strategy
+
         top_strategies = comparison_df.head(5)
         strategy_labels = [f"{row['Strategy']} ({row['Risk Segment']})" for _, row in top_strategies.iterrows()]
         roi_values = top_strategies['ROI %']
@@ -231,8 +207,7 @@ def show_retention_strategies(df):
         ax.barh(strategy_labels, roi_values)
         ax.set_title('Top 5 Strategies by ROI')
         ax.set_xlabel('ROI %')
-        
-        # Add value labels
+
         for i, v in enumerate(roi_values):
             ax.text(v + 5, i, f"{v:.1f}%", va='center')
         
@@ -240,8 +215,7 @@ def show_retention_strategies(df):
         st.pyplot(fig)
     else:
         st.warning("No comparison data available.")
-    
-    # Implementation recommendations
+
     st.subheader("Implementation Recommendations")
     
     st.markdown("""
