@@ -21,14 +21,9 @@ def create_service_features(df):
 def create_financial_features(df):
     # Make sure tenure is at least 1 for division operations (avoid divide by zero)
     safe_tenure = df['tenure'].replace(0, 1)
-    
-    # Customer Lifetime Value approximation
+
     df['CLV'] = df['tenure'] * df['MonthlyCharges']
-    
-    # Average monthly spend
     df['AvgMonthlySpend'] = df['TotalCharges'] / safe_tenure
-    
-    # Make sure all calculations produced valid results
     df['CLV'] = df['CLV'].fillna(0)
     df['AvgMonthlySpend'] = df['AvgMonthlySpend'].fillna(0)
     
@@ -53,8 +48,8 @@ def prepare_modeling_data(df):
                              'OnlineBackup', 'DeviceProtection', 'TechSupport', 
                              'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod', 'TenureGroup']
     
-    X = df.drop('Churn', axis=1)  # Features
-    y = df['Churn']  # Target
+    X = df.drop('Churn', axis=1)
+    y = df['Churn']
 
     # Remove customerID as it's not a predictor
     if 'customerID' in X.columns:

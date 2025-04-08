@@ -2,9 +2,10 @@
 Model training module for customer churn prediction.
 """
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import roc_auc_score, classification_report
 from sklearn.model_selection import train_test_split
+import xgboost as xgb
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,7 +29,6 @@ def load_enhanced_data(data_path='data/processed/telco_churn_primary.csv'):
     return df
 
 def prepare_modeling_data(df):
-    print("Preparing data for modeling...")
     X = df.drop(['Churn', 'customerID'] if 'customerID' in df.columns else ['Churn'], axis=1)
     y = df['Churn']
 
@@ -88,7 +88,7 @@ def train_logistic_regression(X_train, y_train, X_test, y_test):
     
     return lr_model, test_auc
 
-def train_random_forest(X_train, y_train, X_test, y_test, param_grid=None):
+def train_random_forest(X_train, y_train, X_test, y_test):
     rf = RandomForestClassifier(
         n_estimators=100,
         max_depth=12,
@@ -108,10 +108,34 @@ def train_random_forest(X_train, y_train, X_test, y_test, param_grid=None):
     print(f"Test AUC: {test_auc:.4f}")
 
     y_pred = (test_pred > 0.5).astype(int)
-    print("\nClassification Report:")
+    print("\nRandom Forest Classification Report:")
     print(classification_report(y_test, y_pred))
 
     return rf, test_auc
+
+def train_xgboost(X_train, y_train, X_test, y_test):
+    xgb_model = xgb.XGBClassifier(
+        n_estimators=100,
+        learning_rate=0.1,
+        max_depth=5,
+        subsample=0.8,
+        random_state=42
+    )
+    xgb_model.fit(X_train, y_train)
+
+    train_pred = xgb_model.predict_proba(X_train)[:, 1]
+    train_auc = roc_auc_score(y_train, train_pred)
+    print(f"Training AUC: {train_auc:.4f}")
+
+    test_pred = xgb_model.predict_proba(X_test)[:, 1]
+    test_auc = roc_auc_score(y_test, test_pred)
+    print(f"Test AUC: {test_auc:.4f}")
+
+    y_pred = (test_pred > 0.5).astype(int)
+    print("\nXGBoost Classification Report:")
+    print(classification_report(y_test, y_pred))
+
+    return xgb_model, test_auc
 
 def plot_feature_importance(model, X_train, n_features=15):
     feature_importances = pd.DataFrame({

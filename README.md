@@ -115,25 +115,29 @@ The interactive dashboard includes:
 
 Data collected from `WA_Fn-UseC_-Telco-Customer-Churn.csv`: 7043 customers and 21 features.
 The basic model is trained by Random Forest Algorithm, achiving:
-- AUC (Area Under ROC Curve): 0.8267
-- Accuracy:                   0.7935
-- Precision:                  0.6397
-- Recall:                     0.5080
-- F1-Score:                   0.5663
+| Metric                    | Value  |
+|---------------------------|--------|
+| AUC (Area Under ROC Curve)| 0.8267 |
+| Accuracy                  | 0.7935 |
+| Precision                 | 0.6397 |
+| Recall                    | 0.5080 |
+| F1-Score                  | 0.5663 |
 
-After integrating new datasets `telecom_customer_churn.csv`, `telecom_zipcode_population.csv`, and `telecom_data_dictionary.csv`, the model is trained from 7043 customers and 39 features.
-The enhanced model use Logistic Regression and Random Forest Algorithm and choose the better result. Surprisingly, Logistic Regression achieves 0.8457 whereas Random Forest only reaches 0.8332 at AUC metrics.
-Below is the best value obtains from training Logistic Regression:
-- AUC (Area Under ROC Curve): 0.8457 
-- Accuracy:                   0.7452
-- Precision:                  0.5127
-- Recall:                     0.8075
-- F1-Score:                   0.6272
+After integrating new datasets `telecom_customer_churn.csv`, `telecom_zipcode_population.csv`, and `telecom_data_dictionary.csv`, the datasets have 7043 customers and 39 features.
+The enhanced model is trained by Logistic Regression, Random Forest, and XGBoosting Algorithms and compare to choose the best result. Surprisingly, Logistic Regression achieves 0.8457 whereas Random Forest and XGBoost only reach 0.8332 and 0.8390 at AUC metrics, respectively.
 
+Below is the metrics obtains from training Logistic Regression:
+| Metric                    | Value  |
+|---------------------------|--------|
+| AUC (Area Under ROC Curve)| 0.8457 |
+| Accuracy                  | 0.7452 |
+| Precision                 | 0.5127 |
+| Recall                    | 0.8075 |
+| F1-Score                  | 0.6272 |
 
 Notably, the model prioritizes recall over precision, meaning it's better at finding potential churners but may flag some loyal customers as risks.
 
-For a customer churn model, this balance is often appropriate since missing a potential churner (false negative) is typically more costly than incorrectly flagging a loyal customer (false positive).
+For a customer churn model, this balance is often appropriate since missing a potential churner __(false negative)__ is typically more costly than incorrectly flagging a loyal customer __(false positive)__.
 
 ## Key Findings
 
@@ -152,6 +156,6 @@ Based on ROI analysis, the most effective retention strategies are:
 3. Loyalty rewards program for medium-risk customers
 4. Targeted support for high-value customers
 
-## License
+## Licenses
 Dataset's copyright from IBM's kaggle: https://www.kaggle.com/datasets/blastchar/telco-customer-churn/data
 The integrated datasets' copyright was collected at: https://www.kaggle.com/datasets/shilongzhuang/telecom-customer-churn-by-maven-analytics

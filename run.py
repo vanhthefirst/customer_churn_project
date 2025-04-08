@@ -13,8 +13,8 @@ def train_model():
     from src.data_processor import preprocess_data
     from src.feature_engineering import engineer_features
     from src.model_trainer import (
-        prepare_modeling_data, split_data, train_logistic_regression,
-        train_random_forest, save_model, save_column_info
+        prepare_modeling_data, split_data, save_model, save_column_info, 
+        train_logistic_regression, train_random_forest, train_xgboost,
     )
     
     print("Loading and preprocessing data...")
@@ -37,12 +37,21 @@ def train_model():
     print("Training Random Forest model...")
     rf_model, rf_auc = train_random_forest(X_train, y_train, X_test, y_test)
 
-    if rf_auc >= lr_auc:
-        print(f"Random Forest model selected (AUC: {rf_auc:.4f} vs {lr_auc:.4f})")
-        final_model = rf_model
-    else:
-        print(f"Logistic Regression model selected (AUC: {lr_auc:.4f} vs {rf_auc:.4f})")
-        final_model = lr_model
+    print("Training XGBoost model...")
+    xgb_model, xgb_auc = train_xgboost(X_train, y_train, X_test, y_test)
+
+    models = {
+        'Logistic Regression': (lr_model, lr_auc),
+        'Random Forest': (rf_model, rf_auc),
+        'XGBoost': (xgb_model, xgb_auc)
+    }
+
+    best_model_name = max(models, key=lambda k: models[k][1])
+    final_model, best_auc = models[best_model_name]
+
+    comparison = " vs ".join([f"{name}: {auc:.4f}" for name, (_, auc) in models.items()])
+
+    print(f"{best_model_name} model selected - AUC: {comparison}")
 
     y_pred_proba = final_model.predict_proba(X_test)[:, 1]
     y_pred = (y_pred_proba >= 0.5).astype(int)
@@ -88,7 +97,6 @@ def run_business_analysis():
 
     if df['Churn'].dtype == 'object':
         print("Converting Churn column to numeric...")
-        # Check for different churn column formats
         if df['Churn'].iloc[0] in ['Yes', 'No']:
             df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0}).fillna(0).astype(int)
         else:
