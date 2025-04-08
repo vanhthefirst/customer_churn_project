@@ -11,7 +11,7 @@ This project develops a machine learning model to predict customer churn and pro
 3. Customer segmentation by risk level
 4. Revenue impact analysis
 5. Targeted retention strategies with ROI calculations
-6. An interactive dashboard for visualization and monitoring
+6. An interactive dashboard for visualisation and monitoring
 
 ## Project Structure
 
@@ -40,7 +40,7 @@ customer_churn_project/
 │   └── X_train_columns.csv
 ├── requirements.txt
 ├── run.py
-├── setup.py
+├── .gitignore
 └── README.md
 ```
 
@@ -54,7 +54,15 @@ customer_churn_project/
 
 ## Usage
 
-### 1. Train the Model
+### 1. Integrate datasets
+
+```
+python run.py --integrate-data
+```
+
+This will integrate the dataset of the basic model with new datasets to train an enhanced model.
+
+### 2. Train the Model
 
 ```
 python run.py --train
@@ -66,19 +74,13 @@ This will:
 - Train a machine learning model
 - Save the model and necessary artifacts
 
-### 2. Launch the Dashboard
+### 3. Launch the Dashboard
 
 ```
 python run.py --dashboard
 ```
 
 This will start the Streamlit dashboard for interactive analysis.
-
-If the page encounter any issues with the dataset, run 
-```
-python setup.py
-```
-at first and call `run.py` for next times.
 
 ## Dashboard Features
 
@@ -92,11 +94,21 @@ The interactive dashboard includes:
 
 ## Model Performance
 
-The model achieves:
-- AUC (Area Under ROC Curve): ~0.83
-- F1 Score: ~0.75
-- Precision: ~0.70
-- Recall: ~0.80
+Data collected from `WA_Fn-UseC_-Telco-Customer-Churn.csv`: 7043 customers and 21 features.
+The basic model is trained by Random Forest Algorithm, achiving:
+- AUC (Area Under ROC Curve): 0.8267
+- Accuracy:                   0.7935
+- Precision:                  0.6397
+- Recall:                     0.5080
+- F1 Score:                   0.5663
+
+After integrating new datasets `telecom_customer_churn.csv`, `telecom_zipcode_population.csv`, and `telecom_data_dictionary.csv`, the model is trained from 7043 customers and 39 features.
+The enhanced model use Logistic Regression and Random Forest Algorithm and choose the better result, achiving:
+- AUC (Area Under ROC Curve): 0.8457
+- Accuracy:                   0.7452
+- Precision:                  0.5127
+- Recall:                     0.8075
+- F1-Score:                   0.6272
 
 ## Key Findings
 

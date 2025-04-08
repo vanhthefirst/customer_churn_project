@@ -44,11 +44,9 @@ def show_overview(df, metrics):
             formatted_revenue,
             f"{metrics['revenue_at_risk_percentage']:.1f}% of total"
         )
-    
-    # Risk segment breakdown
+
     st.subheader("Customer Risk Segments")
-    
-    # Create risk segment visualization
+
     risk_dist = df['risk_segment'].value_counts().reset_index()
     risk_dist.columns = ['Risk Segment', 'Count']
     
@@ -63,7 +61,6 @@ def show_overview(df, metrics):
         st.pyplot(fig)
     
     with col6:
-        # Risk segment details
         st.subheader("Risk Segment Details")
         for segment in ['High Risk', 'Medium-High Risk', 'Medium-Low Risk', 'Low Risk']:
             segment_count = len(df[df['risk_segment'] == segment])
@@ -74,17 +71,14 @@ def show_overview(df, metrics):
                 st.markdown(f"**{segment}**: {segment_count:,} customers ({segment_percent:.1f}%)")
                 st.markdown(f"- Average churn rate: {segment_churn_rate:.1f}%")
                 st.markdown(f"- Monthly revenue: ${df[df['risk_segment'] == segment]['MonthlyCharges'].sum():,.2f}")
-    
-    # Churn analysis by key dimensions
+
     st.subheader("Churn Analysis by Key Dimensions")
-    
-    # Select dimension for analysis
+
     dimension = st.selectbox(
         "Select Dimension",
         ["Contract", "TenureGroup", "InternetService", "PaymentMethod"]
     )
-    
-    # Calculate churn rate by selected dimension
+
     if dimension == "TenureGroup":
         if df[dimension].dtype in [np.int64, np.float64]:
             tenure_labels = {
@@ -95,35 +89,30 @@ def show_overview(df, metrics):
                 4: '4-5 years',
                 5: '5+ years'
             }
-            # Group using numeric values but display with labels
+
             churn_by_dimension = df.groupby(dimension)['Churn'].mean().reset_index()
             churn_by_dimension['Churn Percentage'] = churn_by_dimension['Churn'] * 100
             churn_by_dimension['Display Label'] = churn_by_dimension[dimension].map(tenure_labels)
             churn_by_dimension['Customer Count'] = df.groupby(dimension).size().values
             
-            # Create visualization
             fig, ax = plt.subplots(figsize=(10, 6))
             bars = sns.barplot(x='Display Label', y='Churn Percentage', data=churn_by_dimension, ax=ax)
         else:
-            # Process as regular categorical variable
             churn_by_dimension = df.groupby(dimension)['Churn'].mean().reset_index()
             churn_by_dimension['Churn Percentage'] = churn_by_dimension['Churn'] * 100
             churn_by_dimension['Customer Count'] = df.groupby(dimension).size().values
-            
-            # Create visualization
+
             fig, ax = plt.subplots(figsize=(10, 6))
             bars = sns.barplot(x=dimension, y='Churn Percentage', data=churn_by_dimension, ax=ax)
     else:
-        # Regular categorical variables
+
         churn_by_dimension = df.groupby(dimension)['Churn'].mean().reset_index()
         churn_by_dimension['Churn Percentage'] = churn_by_dimension['Churn'] * 100
         churn_by_dimension['Customer Count'] = df.groupby(dimension).size().values
-        
-        # Create visualization
+
         fig, ax = plt.subplots(figsize=(10, 6))
         bars = sns.barplot(x=dimension, y='Churn Percentage', data=churn_by_dimension, ax=ax)
-    
-    # Add customer count as text on bars
+
     for i, bar in enumerate(bars.patches):
         count = churn_by_dimension.iloc[i]['Customer Count']
         bars.text(
@@ -138,23 +127,19 @@ def show_overview(df, metrics):
     ax.set_title(f'Churn Rate by {dimension}')
     ax.set_ylabel('Churn Rate (%)')
     st.pyplot(fig)
-    
-    # Feature correlation with churn
+
     st.subheader("Feature Correlation with Churn")
-    
-    # Select numeric columns for correlation
+
     numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges', 'Churn', 
                    'TotalServices', 'CLV', 'ContractRiskFactor']
     
     valid_cols = [col for col in numeric_cols if col in df.columns]
-    
-    # Compute correlation matrix
+
     corr_matrix = df[numeric_cols].corr()
     churn_corr = corr_matrix['Churn'].sort_values(ascending=False)
-    
-    # Create bar chart of correlations
+
     fig, ax = plt.subplots(figsize=(10, 6))
-    churn_corr = churn_corr.drop('Churn')  # Remove self-correlation
+    churn_corr = churn_corr.drop('Churn')
     sns.barplot(x=churn_corr.values, y=churn_corr.index, ax=ax)
     ax.set_title('Feature Correlation with Churn')
     ax.set_xlabel('Correlation Coefficient')

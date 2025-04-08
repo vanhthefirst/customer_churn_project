@@ -3,7 +3,7 @@ numpy==1.23.2
 scikit-learn==1.1.2
 matplotlib==3.5.3
 seaborn==0.12.0
-streamlit==1.17.0
+streamlit==1.44.0
 plotly==5.10.0
 jupyter==1.0.0
 altair==4.2.0
