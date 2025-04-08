@@ -114,6 +114,7 @@ The interactive dashboard includes:
 ## Model Performance
 
 Data collected from `WA_Fn-UseC_-Telco-Customer-Churn.csv`: 7043 customers and 21 features.
+
 The basic model is trained by Random Forest Algorithm, achiving:
 | Metric                    | Value  |
 |---------------------------|--------|
@@ -124,6 +125,7 @@ The basic model is trained by Random Forest Algorithm, achiving:
 | F1-Score                  | 0.5663 |
 
 After integrating new datasets `telecom_customer_churn.csv`, `telecom_zipcode_population.csv`, and `telecom_data_dictionary.csv`, the datasets have 7043 customers and 39 features.
+
 The enhanced model is trained by Logistic Regression, Random Forest, and XGBoosting Algorithms and compare to choose the best result. Surprisingly, Logistic Regression achieves 0.8457 whereas Random Forest and XGBoost only reach 0.8332 and 0.8390 at AUC metrics, respectively.
 
 Below is the metrics obtains from training Logistic Regression:
