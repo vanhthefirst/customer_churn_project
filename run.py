@@ -163,7 +163,7 @@ def launch_dashboard():
         print("Starting Streamlit dashboard...")
         print("Press Ctrl+C to stop the dashboard")
 
-        process = subprocess.Popen(["streamlit", "run", "app/app.py"])
+        process = subprocess.Popen(["streamlit", "run", "app/app.py", "--server.port", "2408"])
         process.wait()
         return True
     except FileNotFoundError:

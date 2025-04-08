@@ -25,10 +25,10 @@ def add_churn_probability(df, model, X_train_columns):
     df_with_proba = df.copy()
     df_with_proba['churn_probability'] = model.predict_proba(X_aligned)[:, 1]
 
-    df_with_proba['risk_segment'] = pd.qcut(
+    df_with_proba['risk_segment'] = pd.cut(
         df_with_proba['churn_probability'], 
-        q=[0, 0.25, 0.5, 0.75, 1.0], 
-        labels=['Low Risk', 'Medium-Low Risk', 'Medium-High Risk', 'High Risk']
+        bins=[0, 0.25, 0.5, 0.75, 1.0], 
+        labels=['Low Risk', 'Medium-Low Risk', 'Medium-High Risk', 'High Risk'],
     )
     
     return df_with_proba

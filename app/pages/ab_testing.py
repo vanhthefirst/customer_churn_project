@@ -68,8 +68,7 @@ def show_ab_testing(df, model=None, X_train_columns=None):
                     segment_values,
                     key="segment_value"
                 )
-                
-                # Map back to numeric
+
                 reverse_map = {v: k for k, v in tenure_map.items()}
                 selected_value = reverse_map.get(selected_label, 0)
 
@@ -195,8 +194,7 @@ def show_ab_testing(df, model=None, X_train_columns=None):
     
     # Step 4: Simulate A/B test
     st.subheader("4. Simulate A/B Test")
-    
-    # Add seed control for reproducible results
+
     use_seed = st.checkbox("Use fixed random seed (for consistent results)", value=True)
     if use_seed:
         random_seed = st.number_input("Random seed", min_value=1, max_value=9999, value=42)
@@ -281,9 +279,22 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         monthly_revenue_saved = monthly_revenue_test * (adjusted_retention_rate) * (test_churn_rate_baseline / 100)
         annual_revenue_saved = monthly_revenue_saved * 12
 
+        test_period_revenue_saved = monthly_revenue_saved * (test_duration / 30)  # Convert days to months
+
+        if 'CLV' in test_group.columns:
+            test_clv = test_group['CLV'].mean()
+        else:
+            test_clv = test_group['MonthlyCharges'].mean() * 12 * 3  # Estimate 3-year CLV
+        
+        clv_saved_per_customer = test_clv * adjusted_retention_rate
+        total_clv_saved = clv_saved_per_customer * test_churns_baseline
+        clv_roi = ((total_clv_saved - (actual_test_size * selected_strategy['cost_per_customer'])) / 
+                  (actual_test_size * selected_strategy['cost_per_customer'])) * 100
+
         total_cost = actual_test_size * selected_strategy['cost_per_customer']
 
         roi = (annual_revenue_saved - total_cost) / total_cost * 100 if total_cost > 0 else 0
+        test_period_roi = (test_period_revenue_saved - total_cost) / total_cost * 100 if total_cost > 0 else 0
 
         try:
             z_stat, p_value = stats.proportions_ztest(
@@ -296,10 +307,38 @@ def show_ab_testing(df, model=None, X_train_columns=None):
             p_value = 0.5  # Neutral p-value
             is_significant = absolute_lift > (baseline_churn_rate * 0.1)  # Simple heuristic
 
+        if p_value < 0.5:  # There's some signal in the data
+            # Simplified calculation: assuming significance scales roughly with sqrt(n)
+            # where n is sample size which relates to duration
+            if not is_significant:
+                current_p = p_value
+                target_p = 1 - confidence_level/100
+                scale_factor = (current_p / target_p) ** 2
+                estimated_days_to_significance = test_duration * scale_factor
+                estimated_days_to_significance = min(estimated_days_to_significance, 365)  # Cap at 1 year
+            else:
+                estimated_days_to_significance = test_duration / 2  # Already significant with half the data
+        else:
+            estimated_days_to_significance = None
+
+        st.write("### Baseline Metrics")
+        col_baseline1, col_baseline2, col_baseline3 = st.columns(3)
+        
+        with col_baseline1:
+            st.metric("Avg Churn Probability", f"{avg_churn_prob:.2%}")
+            st.metric("Baseline Churn Rate", f"{baseline_churn_rate:.2f}%")
+        
+        with col_baseline2:
+            st.metric("Avg Monthly Charges", f"${avg_monthly_charges:.2f}")
+            st.metric("Monthly Revenue at Risk", f"${avg_monthly_charges * avg_churn_prob * len(segment_df):.2f}")
+        
+        with col_baseline3:
+            st.metric("Baseline CLV", f"${baseline_clv:.2f}")
+            st.metric("Test Duration", f"{test_duration} days")
+
         col8, col9, col10 = st.columns(3)
         
         with col8:
-            st.metric("Baseline Churn Rate", f"{baseline_churn_rate:.2f}%")
             st.metric("Control Group Churn Rate", f"{control_churn_rate:.2f}%")
         
         with col9:
@@ -313,6 +352,8 @@ def show_ab_testing(df, model=None, X_train_columns=None):
             st.metric("Statistical Significance", 
                      "Yes" if is_significant else "No", 
                      f"p-value: {p_value:.4f}" if 'p_value' in locals() else "")
+            if estimated_days_to_significance and not is_significant:
+                st.metric("Est. Days to Significance", f"{estimated_days_to_significance:.0f}")
 
         st.subheader("Group Balance Information")
         
@@ -334,12 +375,15 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         
         with col11:
             st.metric("Total Strategy Cost", f"${total_cost:,.2f}")
+            st.metric("Test Period ROI", f"{test_period_roi:.1f}%")
         
         with col12:
+            st.metric("Revenue Saved (Test Period)", f"${test_period_revenue_saved:,.2f}")
             st.metric("Annual Revenue Saved", f"${annual_revenue_saved:,.2f}")
         
         with col13:
-            st.metric("ROI", f"{roi:.1f}%")
+            st.metric("Annual ROI", f"{roi:.1f}%")
+            st.metric("CLV-Based ROI", f"{clv_roi:.1f}%")
 
         st.subheader("Visualizations")
         
@@ -372,17 +416,12 @@ def show_ab_testing(df, model=None, X_train_columns=None):
             st.pyplot(fig1)
         
         with col15:
-            # Cost vs Revenue Saved
+            # Cost vs Revenue Saved over test duration
             fig2, ax2 = plt.subplots(figsize=(8, 6))
             
-            labels = ['Strategy Cost', 'Revenue Saved']
-            values = [total_cost, annual_revenue_saved]
-            colors = ['#ff9999', '#99ff99']
-            
-            if annual_revenue_saved < 1:
-                revenue_note = "(No measurable revenue impact)"
-            else:
-                revenue_note = ""
+            labels = ['Strategy Cost', 'Test Period Revenue', 'Annual Revenue']
+            values = [total_cost, test_period_revenue_saved, annual_revenue_saved]
+            colors = ['#ff9999', '#99ddff', '#99ff99']
             
             bars = ax2.bar(labels, values, color=colors)
             
@@ -391,15 +430,12 @@ def show_ab_testing(df, model=None, X_train_columns=None):
 
             for i, bar in enumerate(bars):
                 height = values[i]
-                if i == 1 and height < 1:
-                    label_text = f"${height:.2f}\n{revenue_note}"
-                else:
-                    label_text = f"${height:,.0f}"
-
                 if height < 1:
+                    label_text = f"${height:.2f}"
                     y_pos = max(values) * 0.05
                     va = 'bottom'
                 else:
+                    label_text = f"${height:,.0f}"
                     y_pos = height * 0.5
                     va = 'center'
                 
@@ -407,14 +443,38 @@ def show_ab_testing(df, model=None, X_train_columns=None):
                          label_text, ha='center', va=va, 
                          color='black', fontweight='bold')
 
-            if annual_revenue_saved < total_cost * 0.05:
+            if test_period_revenue_saved < total_cost * 0.05:
                 ax2.set_ylim(0, total_cost * 1.2)
             
             st.pyplot(fig2)
 
+        fig_clv, ax_clv = plt.subplots(figsize=(10, 6))
+        
+        clv_data = {
+            'Metric': ['Cost Per Customer', 'Revenue Saved Per Customer', 'CLV Saved Per Customer'],
+            'Amount': [selected_strategy['cost_per_customer'], 
+                      annual_revenue_saved / test_churns_baseline if test_churns_baseline > 0 else 0,
+                      clv_saved_per_customer]
+        }
+        clv_df = pd.DataFrame(clv_data)
+        
+        clv_bars = sns.barplot(x='Metric', y='Amount', data=clv_df, ax=ax_clv, palette=['#ff9999', '#99ddff', '#99ff99'])
+        ax_clv.set_title('Customer Value Impact Comparison')
+        ax_clv.set_ylabel('Amount per Customer ($)')
+        
+        for i, bar in enumerate(clv_bars.patches):
+            ax_clv.text(bar.get_x() + bar.get_width()/2., 
+                      bar.get_height() + 5,
+                      f'${clv_df["Amount"].iloc[i]:.2f}', 
+                      ha='center')
+        
+        st.pyplot(fig_clv)
+
         st.subheader("Projected Cumulative Impact")
 
-        months = range(1, 13)
+        test_months = test_duration / 30
+        months_to_show = max(12, int(test_months) + 1)
+        months = range(1, months_to_show + 1)
 
         costs = [total_cost] + [0] * (len(months) - 1)
         cumulative_costs = np.cumsum(costs)
@@ -423,10 +483,16 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         cumulative_savings = np.cumsum(monthly_savings)
         net_impact = cumulative_savings - cumulative_costs
 
+        test_end_month = max(1, int(test_months))
+
         fig3, ax3 = plt.subplots(figsize=(10, 6))
         ax3.plot(months, cumulative_costs, 'r--', label='Cumulative Cost')
         ax3.plot(months, cumulative_savings, 'g-', label='Cumulative Revenue Saved')
         ax3.plot(months, net_impact, 'b-', label='Net Impact')
+
+        ax3.axvline(x=test_end_month, color='gray', linestyle='--', alpha=0.7)
+        ax3.text(test_end_month + 0.1, max(cumulative_savings)/2, f'Test End: Month {test_end_month}', 
+                rotation=90, verticalalignment='center')
 
         if max(cumulative_savings) < 1:
             ax3.annotate('No measurable revenue impact', 
@@ -438,9 +504,19 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         if any(net_impact > 0):
             breakeven_month = next((i+1 for i, impact in enumerate(net_impact) if impact > 0), None)
             if breakeven_month:
-                ax3.axvline(x=breakeven_month, color='gray', linestyle='--', alpha=0.7)
+                ax3.axvline(x=breakeven_month, color='green', linestyle='--', alpha=0.7)
                 ax3.text(breakeven_month + 0.1, max(net_impact)/2, f'Break-even: Month {breakeven_month}', 
                         rotation=90, verticalalignment='center')
+                
+                # Show if break-even occurs during or after test
+                if breakeven_month <= test_end_month:
+                    ax3.annotate('Break-even occurs during test period', 
+                                xy=(breakeven_month, net_impact[breakeven_month-1]),
+                                xytext=(breakeven_month, net_impact[breakeven_month-1] + max(net_impact) * 0.1),
+                                arrowprops=dict(facecolor='green', shrink=0.05),
+                                ha='center', 
+                                fontsize=10,
+                                bbox=dict(boxstyle="round,pad=0.3", fc="lightgreen", alpha=0.7))
         
         ax3.set_title('Projected Financial Impact Over Time')
         ax3.set_xlabel('Month')
@@ -455,6 +531,7 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         ax3.legend()
         
         st.pyplot(fig3)
+
 
         st.subheader("Sensitivity Analysis")
 
@@ -507,6 +584,30 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         
         st.pyplot(fig_sens)
 
+        fig_duration, ax_duration = plt.subplots(figsize=(10, 6))
+        
+        durations = [30, 60, 90, 120, 150, 180]
+        duration_roi_values = []
+        
+        for duration in durations:
+            duration_monthly = duration / 30
+            duration_revenue = monthly_revenue_saved * duration_monthly
+            duration_roi = (duration_revenue - total_cost) / total_cost * 100 if total_cost > 0 else 0
+            duration_roi_values.append(duration_roi)
+        
+        ax_duration.plot(durations, duration_roi_values, 'ro-')
+        ax_duration.axhline(y=0, color='gray', linestyle='--', alpha=0.7)
+        ax_duration.axvline(x=test_duration, color='blue', linestyle='--', alpha=0.7)
+        ax_duration.text(test_duration + 2, min(duration_roi_values) * 0.9, f'Current: {test_duration} days', 
+                        color='blue', fontweight='bold')
+        
+        ax_duration.set_xlabel('Test Duration (days)')
+        ax_duration.set_ylabel('Test Period ROI (%)')
+        ax_duration.set_title('ROI Sensitivity to Test Duration')
+        ax_duration.grid(True, alpha=0.3)
+        
+        st.pyplot(fig_duration)
+
         st.subheader("Strategy Recommendation")
         
         if roi > 50:
@@ -529,6 +630,10 @@ def show_ab_testing(df, model=None, X_train_columns=None):
         st.markdown(f"<h3 style='color: {recommendation_color}'>{recommendation}</h3>", unsafe_allow_html=True)
         st.markdown(recommendation_text)
 
+        if test_period_roi <= 0 and roi > 0:
+            st.warning("⚠️ Strategy will not break even during the test period, but shows positive long-term ROI.")
+            st.markdown(f"Consider extending the test duration to {max(durations) if max(durations) > test_duration else test_duration + 30} days for more conclusive results.")
+        
         if use_seed:
             st.success("✅ Results are consistent due to fixed random seed and balanced sampling.")
         else:
@@ -536,6 +641,8 @@ def show_ab_testing(df, model=None, X_train_columns=None):
 
         if not is_significant:
             st.warning("⚠️ Results are not statistically significant. Consider increasing sample size or test duration.")
+            if estimated_days_to_significance:
+                st.markdown(f"Based on current trends, estimated {estimated_days_to_significance:.0f} days needed to reach statistical significance.")
         
         if relative_lift < 10:
             st.info("ℹ️ The relative improvement is relatively small. Consider testing more impactful strategies.")

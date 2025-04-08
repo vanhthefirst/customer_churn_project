@@ -11,37 +11,48 @@ This project develops a machine learning model to predict customer churn and pro
 3. Customer segmentation by risk level
 4. Revenue impact analysis
 5. Targeted retention strategies with ROI calculations
-6. An interactive dashboard for visualisation and monitoring
+6. An interactive dashboard for visualization and monitoring
 
 ## Project Structure
 
 ```
 customer_churn_project/
-├── data/
-│   ├── telco_churn_engineered.csv
-│   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
-├── src/
-│   ├── __init__.py
-│   ├── data_processor.py
-│   ├── feature_engineering.py
-│   ├── model_trainer.py
-│   └── business_analysis.py
 ├── app/
-│   ├── app.py
-│   └── pages/
-│       ├── __init__.py
-│       ├── overview.py
-│       ├── customer_prediction.py
-│       ├── segment_analysis.py
-|       ├── retention_strategies.py
-│       └── ab_testing.py
+│   ├── pages/
+│   │   ├── __init__.py
+│   │   ├── ab_testing.py
+│   │   ├── customer_prediction.py
+│   │   ├── overview.py
+│   │   ├── retention_strategies.py
+│   │   └── segment_analysis.py
+│   └── app.py
+├── data/
+│   ├── processed/
+│   │   ├── telco_churn_engineered.csv
+│   │   └── telco_churn_primary.csv
+│   ├── marketing_campaign.csv
+│   ├── telecom_customer_churn.csv
+│   ├── telecom_data_dictionary.csv
+│   ├── telecom_zipcode_population.csv
+│   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
 ├── models/
 │   ├── churn_model.pkl
 │   └── X_train_columns.csv
-├── requirements.txt
-├── run.py
+├── results/
+│   ├── .png files
+│   ├── churn_by_city.csv
+│   └── churn_risk_factors.csv
+├── src/
+│   ├── __init__.py
+│   ├── business_analysis.py
+│   ├── data_integrator.py
+│   ├── data_processor.py
+│   ├── feature_engineering.py
+│   └── model_trainer.py
 ├── .gitignore
-└── README.md
+├── README.md
+├── requirements.txt
+└── run.py
 ```
 
 ## Installation
@@ -61,6 +72,14 @@ python run.py --integrate-data
 ```
 
 This will integrate the dataset of the basic model with new datasets to train an enhanced model.
+
+To view the data information, run the following command after calling `--integrate-data`:
+
+```
+python run.py --analyze
+```
+
+This will provide insights from the datasets, including Geography Analysis, Service Usage Analysis, Customer Journey Analysis, and Overall Business Insights.
 
 ### 2. Train the Model
 
@@ -100,15 +119,21 @@ The basic model is trained by Random Forest Algorithm, achiving:
 - Accuracy:                   0.7935
 - Precision:                  0.6397
 - Recall:                     0.5080
-- F1 Score:                   0.5663
+- F1-Score:                   0.5663
 
 After integrating new datasets `telecom_customer_churn.csv`, `telecom_zipcode_population.csv`, and `telecom_data_dictionary.csv`, the model is trained from 7043 customers and 39 features.
-The enhanced model use Logistic Regression and Random Forest Algorithm and choose the better result, achiving:
-- AUC (Area Under ROC Curve): 0.8457
+The enhanced model use Logistic Regression and Random Forest Algorithm and choose the better result. Surprisingly, Logistic Regression achieves 0.8457 whereas Random Forest only reaches 0.8332 at AUC metrics.
+Below is the best value obtains from training Logistic Regression:
+- AUC (Area Under ROC Curve): 0.8457 
 - Accuracy:                   0.7452
 - Precision:                  0.5127
 - Recall:                     0.8075
 - F1-Score:                   0.6272
+
+
+Notably, the model prioritizes recall over precision, meaning it's better at finding potential churners but may flag some loyal customers as risks.
+
+For a customer churn model, this balance is often appropriate since missing a potential churner (false negative) is typically more costly than incorrectly flagging a loyal customer (false positive).
 
 ## Key Findings
 
@@ -129,3 +154,4 @@ Based on ROI analysis, the most effective retention strategies are:
 
 ## License
 Dataset's copyright from IBM's kaggle: https://www.kaggle.com/datasets/blastchar/telco-customer-churn/data
+The integrated datasets' copyright was collected at: https://www.kaggle.com/datasets/shilongzhuang/telecom-customer-churn-by-maven-analytics

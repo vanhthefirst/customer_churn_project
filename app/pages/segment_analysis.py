@@ -14,16 +14,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from src.business_analysis import overall_business_insights
 
 def get_segment_insights(segment_df, full_df):
-    """
-    Analyze segment data and return insights compared to the overall population.
-    
-    Parameters:
-    segment_df (pandas.DataFrame): DataFrame for the selected segment
-    full_df (pandas.DataFrame): DataFrame for the full dataset
-    
-    Returns:
-    dict: Dictionary of insights for the segment
-    """
     insights = {}
 
     columns_to_analyze = [
@@ -117,10 +107,9 @@ def show_segment_analysis(df):
         selected_value = reverse_map.get(selected_label, 0)
 
         segment_df = df[df[segment_column] == selected_value]
-
         segment_title = f"{segment_type}: {selected_label}"
     else:
-        segment_values = sorted(df[segment_column].unique().tolist())
+        segment_values = sorted([str(val) for val in df[segment_column].unique().tolist()])
 
         if segment_column == "risk_segment":
             segment_values = ["High Risk", "Medium-High Risk", "Medium-Low Risk", "Low Risk"]

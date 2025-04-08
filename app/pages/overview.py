@@ -14,8 +14,7 @@ def show_overview(df, metrics):
     This dashboard provides an overview of customer churn analysis, including key metrics,
     churn distribution across different segments, and risk analysis.
     """)
-    
-    # Key metrics in cards
+
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -47,22 +46,31 @@ def show_overview(df, metrics):
 
     st.subheader("Customer Risk Segments")
 
+    risk_order = ['Low Risk', 'Medium-Low Risk', 'Medium-High Risk', 'High Risk']
+    
     risk_dist = df['risk_segment'].value_counts().reset_index()
     risk_dist.columns = ['Risk Segment', 'Count']
+
+    risk_dist['Risk Segment'] = pd.Categorical(
+        risk_dist['Risk Segment'], 
+        categories=risk_order, 
+        ordered=True
+    )
+    risk_dist = risk_dist.sort_values('Risk Segment')
     
     col5, col6 = st.columns([3, 2])
     
     with col5:
         fig, ax = plt.subplots(figsize=(10, 6))
         colors = ['#2ECC71', '#3498DB', '#F39C12', '#E74C3C']  # Green to red
-        sns.barplot(x='Risk Segment', y='Count', hue='Risk Segment', data=risk_dist, palette=colors, ax=ax)
+        bars = ax.bar(risk_dist['Risk Segment'], risk_dist['Count'], color=colors)
         ax.set_title('Customer Distribution by Risk Segment')
         ax.set_ylabel('Number of Customers')
         st.pyplot(fig)
     
     with col6:
         st.subheader("Risk Segment Details")
-        for segment in ['High Risk', 'Medium-High Risk', 'Medium-Low Risk', 'Low Risk']:
+        for segment in risk_order:
             segment_count = len(df[df['risk_segment'] == segment])
             segment_percent = segment_count / len(df) * 100
             segment_churn_rate = df[df['risk_segment'] == segment]['Churn'].mean() * 100
@@ -135,7 +143,7 @@ def show_overview(df, metrics):
     
     valid_cols = [col for col in numeric_cols if col in df.columns]
 
-    corr_matrix = df[numeric_cols].corr()
+    corr_matrix = df[valid_cols].corr()
     churn_corr = corr_matrix['Churn'].sort_values(ascending=False)
 
     fig, ax = plt.subplots(figsize=(10, 6))
