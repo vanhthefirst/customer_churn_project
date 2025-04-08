@@ -74,12 +74,6 @@ python run.py --dashboard
 
 This will start the Streamlit dashboard for interactive analysis.
 
-If the page encounter any issues with the dataset, run 
-```
-python setup.py
-```
-at first and call `run.py` for next times.
-
 ## Dashboard Features
 
 The interactive dashboard includes:
@@ -93,10 +87,11 @@ The interactive dashboard includes:
 ## Model Performance
 
 The model achieves:
-- AUC (Area Under ROC Curve): ~0.83
-- F1 Score: ~0.75
-- Precision: ~0.70
-- Recall: ~0.80
+- AUC (Area Under ROC Curve): 0.8267
+- Accuracy:                   0.7935
+- Precision:                  0.6397
+- Recall:                     0.5080
+- F1 Score:                   0.5663
 
 ## Key Findings
 
