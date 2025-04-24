@@ -61,7 +61,7 @@ def show_overview(df, metrics):
     col5, col6 = st.columns([3, 2])
     
     with col5:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(12, 9))
         colors = ['#2ECC71', '#3498DB', '#F39C12', '#E74C3C']  # Green to red
         bars = ax.bar(risk_dist['Risk Segment'], risk_dist['Count'], color=colors)
         ax.set_title('Customer Distribution by Risk Segment')
@@ -74,11 +74,11 @@ def show_overview(df, metrics):
             segment_count = len(df[df['risk_segment'] == segment])
             segment_percent = segment_count / len(df) * 100
             segment_churn_rate = df[df['risk_segment'] == segment]['Churn'].mean() * 100
+            segment_revenue = df[df['risk_segment'] == segment]['MonthlyCharges'].sum()
             
-            if segment == 'High Risk':
-                st.markdown(f"**{segment}**: {segment_count:,} customers ({segment_percent:.1f}%)")
-                st.markdown(f"- Average churn rate: {segment_churn_rate:.1f}%")
-                st.markdown(f"- Monthly revenue: ${df[df['risk_segment'] == segment]['MonthlyCharges'].sum():,.2f}")
+            st.markdown(f"**{segment}**: {segment_count:,} customers ({segment_percent:.1f}%)")
+            st.markdown(f"- Average churn rate: {segment_churn_rate:.1f}%")
+            st.markdown(f"- Monthly revenue: ${segment_revenue:,.2f}")
 
     st.subheader("Churn Analysis by Key Dimensions")
 

@@ -115,7 +115,7 @@ The interactive dashboard includes:
 
 Data collected from `WA_Fn-UseC_-Telco-Customer-Churn.csv`: 7043 customers and 21 features.
 
-The basic model is trained by Random Forest Algorithm, achiving:
+The basic model is trained by __Random Forest Algorithm__, achiving:
 | Metric                    | Value  |
 |---------------------------|--------|
 | AUC (Area Under ROC Curve)| 0.8267 |
@@ -126,16 +126,16 @@ The basic model is trained by Random Forest Algorithm, achiving:
 
 After integrating new datasets `telecom_customer_churn.csv`, `telecom_zipcode_population.csv`, and `telecom_data_dictionary.csv`, the datasets have 7043 customers and 39 features.
 
-The enhanced model is trained by Logistic Regression, Random Forest, and XGBoosting Algorithms and compare to choose the best result. Surprisingly, Logistic Regression achieves 0.8457 whereas Random Forest and XGBoost only reach 0.8332 and 0.8390 at AUC metrics, respectively.
+The enhanced model is trained by __Logistic Regression__, __Random Forest__, and __XGBoosting__ Algorithms and compare to choose the best result. Surprisingly, Logistic Regression achieves 0.8457 whereas Random Forest and XGBoost only reach 0.8332 and 0.8397 at AUC metrics, respectively.
 
 Below is the metrics obtains from training Logistic Regression:
 | Metric                    | Value  |
 |---------------------------|--------|
-| AUC (Area Under ROC Curve)| 0.8457 |
+| AUC (Area Under ROC Curve)| 0.8456 |
 | Accuracy                  | 0.7452 |
-| Precision                 | 0.5127 |
-| Recall                    | 0.8075 |
-| F1-Score                  | 0.6272 |
+| Precision                 | 0.5130 |
+| Recall                    | 0.7941 |
+| F1-Score                  | 0.6233 |
 
 Notably, the model prioritizes recall over precision, meaning it's better at finding potential churners but may flag some loyal customers as risks.
 
@@ -160,4 +160,5 @@ Based on ROI analysis, the most effective retention strategies are:
 
 ## Licenses
 Dataset's copyright from IBM's kaggle: https://www.kaggle.com/datasets/blastchar/telco-customer-churn/data
+
 The integrated datasets' copyright was collected at: https://www.kaggle.com/datasets/shilongzhuang/telecom-customer-churn-by-maven-analytics
